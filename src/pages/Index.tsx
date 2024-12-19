@@ -25,8 +25,9 @@ const Index = () => {
         name: teacher.name,
         description: `${teacher.name} (${teacher.tibetan_name || 'No Tibetan name'}) - ${teacher.tradition} tradition`,
         text: `Period: ${teacher.period || 'Unknown'}\nLocation: ${teacher.location_name || 'Unknown'}\n\nScores:\nScholastic: ${teacher.scholastic || 0}\nTantric: ${teacher.tantric || 0}\nMeditation: ${teacher.meditation || 0}\nPhilosophical: ${teacher.philosophical || 0}`,
-        x: teacher.scholastic || 0, // Using scholastic score for X coordinate
-        y: teacher.meditation || 0,  // Using meditation score for Y coordinate
+        x: teacher.scholastic || 0,
+        y: teacher.meditation || 0,
+        scholastic: teacher.scholastic || 0, // Added this line to include the scholastic score
       }));
     },
   });
