@@ -56,7 +56,9 @@ export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: Tea
           strokeWidth: 0,
         },
         smooth: {
+          enabled: true,
           type: 'continuous',
+          roundness: 0.5,
         },
       },
       physics: {

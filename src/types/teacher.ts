@@ -9,5 +9,5 @@ export interface TeacherData {
   meditation: number | null;
   philosophical: number | null;
   location_name: string | null;
-  description: string;
+  description?: string; // Made optional with ?
 }
