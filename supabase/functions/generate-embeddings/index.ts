@@ -1,6 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.1';
+import { pipeline } from "npm:@huggingface/transformers";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,13 +22,11 @@ serve(async (req) => {
 
     console.log(`Processing ${descriptions.length} descriptions`);
 
-    // Initialize the pipeline
-    const pipe = await Pipeline.fromPreTrained(
-      'Xenova/all-MiniLM-L6-v2',
-      'feature-extraction',
-      {
-        revision: 'main',
-      }
+    // Create a feature-extraction pipeline
+    const extractor = await pipeline(
+      "feature-extraction",
+      "mixedbread-ai/mxbai-embed-xsmall-v1",
+      { device: "cpu" }
     );
 
     // Generate embeddings for all descriptions
@@ -36,12 +34,12 @@ serve(async (req) => {
       descriptions.map(async (description) => {
         if (!description) return null;
         
-        const output = await pipe(description, {
-          pooling: 'mean',
-          normalize: true,
+        const output = await extractor(description, { 
+          pooling: "mean", 
+          normalize: true 
         });
         
-        return Array.from(output.data);
+        return output.tolist();
       })
     );
 
