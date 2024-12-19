@@ -1,1 +1,2 @@
-project_id = "ezakimuqshxoyxozkmfq"
+[functions.generate-embeddings]
+verify_jwt = false
