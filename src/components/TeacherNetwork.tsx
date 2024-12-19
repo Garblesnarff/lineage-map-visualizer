@@ -9,6 +9,11 @@ interface TeacherNetworkProps {
   onTeacherSelect: (teacher: TeacherData) => void;
 }
 
+/**
+ * TeacherNetwork Component
+ * Renders a network visualization of teachers and their relationships using vis-network.
+ * Teachers are represented as nodes, and their relationships as edges in the graph.
+ */
 export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: TeacherNetworkProps) => {
   const networkRef = useRef<HTMLDivElement>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -16,6 +21,7 @@ export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: Tea
   useEffect(() => {
     console.log("TeacherNetwork received props:", { teachers, relationships });
     
+    // Early return if network container or teacher data is not ready
     if (!networkRef.current || !teachers.length) {
       console.log("Network ref or teachers not ready:", { 
         hasNetworkRef: !!networkRef.current, 
@@ -24,8 +30,11 @@ export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: Tea
       return;
     }
 
-    // Create nodes from teachers
-    const nodes = teachers.map(teacher => ({
+    /**
+     * Creates nodes from teacher data
+     * Each node represents a teacher with their name, tradition, and visual properties
+     */
+    const createNodes = () => teachers.map(teacher => ({
       id: teacher.id,
       label: teacher.name,
       title: `${teacher.name}\n${teacher.tradition} tradition`,
@@ -40,18 +49,28 @@ export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: Tea
         },
       },
     }));
-    console.log("Created nodes:", nodes);
 
-    // Create edges from relationships
-    const edges = relationships.map(rel => ({
+    /**
+     * Creates edges from relationship data
+     * Each edge represents a connection between teachers with optional relationship type
+     */
+    const createEdges = () => relationships.map(rel => ({
       from: rel.source_id,
       to: rel.target_id,
       label: rel.relationship_type || '',
       arrows: 'to',
     }));
+
+    // Create nodes and edges for the network
+    const nodes = createNodes();
+    const edges = createEdges();
+    console.log("Created nodes:", nodes);
     console.log("Created edges:", edges);
 
-    // Network configuration
+    /**
+     * Network visualization configuration
+     * Defines appearance and behavior of nodes, edges, and physics simulation
+     */
     const options = {
       nodes: {
         shape: 'circle',
@@ -84,11 +103,14 @@ export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: Tea
       },
     };
 
-    // Create network
+    // Initialize network with nodes, edges, and options
     console.log("Initializing network with:", { nodes, edges, options });
     const network = new Network(networkRef.current, { nodes, edges }, options);
 
-    // Handle node selection
+    /**
+     * Handle node selection event
+     * Updates selected node state and triggers callback with selected teacher data
+     */
     network.on('selectNode', (params) => {
       console.log("Node selected:", params);
       const selectedTeacher = teachers.find(t => t.id === params.nodes[0]);
@@ -98,12 +120,16 @@ export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: Tea
       }
     });
 
-    // Handle deselection
+    /**
+     * Handle node deselection event
+     * Clears selected node state
+     */
     network.on('deselectNode', () => {
       console.log("Node deselected");
       setSelectedNodeId(null);
     });
 
+    // Cleanup network on component unmount
     return () => {
       network.destroy();
     };
