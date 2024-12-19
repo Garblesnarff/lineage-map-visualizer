@@ -22,7 +22,7 @@ const Index = () => {
       
       if (teachersError) throw teachersError;
 
-      // Generate embeddings using our simplified Edge Function
+      // Generate embeddings using the Edge Function
       const descriptions = teachersData.map(t => t.description || '');
       const { data: embeddingsData, error: embeddingsError } = await supabase.functions
         .invoke('generate-embeddings', {
@@ -31,11 +31,11 @@ const Index = () => {
 
       if (embeddingsError) throw embeddingsError;
 
-      // Use UMAP with adjusted parameters for better stability
+      // Use UMAP with specified parameters
       const umap = new UMAP({
         nComponents: 2,
-        nNeighbors: 5,
-        minDist: 0.3,
+        nNeighbors: 15,
+        minDist: 0.1,
         spread: 1.0,
         nEpochs: 100
       });
@@ -44,8 +44,8 @@ const Index = () => {
       // Combine teacher data with coordinates
       return teachersData.map((teacher, index) => ({
         ...teacher,
-        x: coordinates[index][0] * 100, // Scale up the coordinates for better visualization
-        y: coordinates[index][1] * 100,
+        x: coordinates[index][0],
+        y: coordinates[index][1],
       })) as TeacherData[];
     },
   });

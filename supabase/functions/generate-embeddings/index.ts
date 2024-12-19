@@ -1,25 +1,11 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { pipeline } from "@huggingface/transformers";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// Simple text to vector function using character frequency
-function textToVector(text: string): number[] {
-  const vector = new Array(128).fill(0);
-  const normalizedText = text.toLowerCase();
-  
-  for (let i = 0; i < normalizedText.length; i++) {
-    const charCode = normalizedText.charCodeAt(i) % 128;
-    vector[charCode] += 1;
-  }
-  
-  // Normalize the vector
-  const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
-  return vector.map(val => magnitude ? val / magnitude : 0);
-}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -36,22 +22,27 @@ serve(async (req) => {
 
     console.log(`Processing ${descriptions.length} descriptions`);
 
+    // Create feature extraction pipeline with the smaller model
+    const extractor = await pipeline(
+      "feature-extraction",
+      "mixedbread-ai/mxbai-embed-xsmall-v1",
+      { device: "cpu" }
+    );
+
     // Generate embeddings for all descriptions
-    const embeddings = descriptions.map(description => {
-      if (!description) return new Array(128).fill(0);
-      return textToVector(description);
-    });
+    const embeddings = await Promise.all(
+      descriptions.map(async (description) => {
+        if (!description) return new Array(384).fill(0);
+        const output = await extractor(description, { pooling: "mean", normalize: true });
+        return output.tolist();
+      })
+    );
 
     console.log('Successfully generated embeddings');
 
     return new Response(
       JSON.stringify({ embeddings }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        } 
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
@@ -60,10 +51,7 @@ serve(async (req) => {
       JSON.stringify({ error: error.message }),
       { 
         status: 500,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }

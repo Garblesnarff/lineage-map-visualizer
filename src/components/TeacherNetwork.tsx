@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Network } from "vis-network";
 import { TeacherData } from "@/types/teacher";
 import { RelationshipData } from "@/types/relationship";
@@ -11,6 +11,7 @@ interface TeacherNetworkProps {
 
 export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: TeacherNetworkProps) => {
   const networkRef = useRef<HTMLDivElement>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!networkRef.current || !teachers.length) return;
@@ -22,6 +23,14 @@ export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: Tea
       title: `${teacher.name}\n${teacher.tradition} tradition`,
       x: teacher.x,
       y: teacher.y,
+      color: {
+        background: teacher.id === selectedNodeId ? '#48bb78' : '#4a5568',
+        border: teacher.id === selectedNodeId ? '#2f855a' : '#2d3748',
+        highlight: {
+          background: '#48bb78',
+          border: '#2f855a',
+        },
+      },
     }));
 
     // Create edges from relationships
@@ -40,14 +49,6 @@ export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: Tea
         font: {
           size: 14,
           color: '#ffffff',
-        },
-        color: {
-          background: '#4a5568',
-          border: '#2d3748',
-          highlight: {
-            background: '#48bb78',
-            border: '#2f855a',
-          },
         },
       },
       edges: {
@@ -79,14 +80,20 @@ export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: Tea
     network.on('selectNode', (params) => {
       const selectedTeacher = teachers.find(t => t.id === params.nodes[0]);
       if (selectedTeacher) {
+        setSelectedNodeId(selectedTeacher.id);
         onTeacherSelect(selectedTeacher);
       }
+    });
+
+    // Handle deselection
+    network.on('deselectNode', () => {
+      setSelectedNodeId(null);
     });
 
     return () => {
       network.destroy();
     };
-  }, [teachers, relationships, onTeacherSelect]);
+  }, [teachers, relationships, onTeacherSelect, selectedNodeId]);
 
   return (
     <div ref={networkRef} className="w-full h-[600px] bg-gray-900 rounded-lg" />

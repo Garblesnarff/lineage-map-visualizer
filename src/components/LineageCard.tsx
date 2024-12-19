@@ -68,6 +68,11 @@ export const LineageCard = ({ teacher, onClose }: LineageCardProps) => {
             </div>
           </div>
         )}
+        <div className="flex justify-end">
+          <Button variant="outline" onClick={onClose}>
+            Clear Selection
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
