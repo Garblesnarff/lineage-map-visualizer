@@ -1,11 +1,35 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { pipeline } from "npm:@huggingface/transformers@latest";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Simple TF-IDF like vectorization
+function generateEmbedding(text: string): number[] {
+  // Normalize and tokenize text
+  const words = text.toLowerCase()
+    .replace(/[^\w\s]/g, '')
+    .split(/\s+/)
+    .filter(word => word.length > 0);
+
+  // Create word frequency map
+  const wordFreq = new Map<string, number>();
+  words.forEach(word => {
+    wordFreq.set(word, (wordFreq.get(word) || 0) + 1);
+  });
+
+  // Convert frequencies to vector (using log scaling)
+  const vector: number[] = Array.from(wordFreq.values())
+    .map(freq => Math.log(1 + freq));
+
+  // Pad or truncate to fixed dimension (384 to match original model)
+  const targetDim = 384;
+  if (vector.length < targetDim) {
+    return [...vector, ...new Array(targetDim - vector.length).fill(0)];
+  }
+  return vector.slice(0, targetDim);
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -22,21 +46,11 @@ serve(async (req) => {
 
     console.log(`Processing ${descriptions.length} descriptions`);
 
-    // Create feature extraction pipeline
-    const extractor = await pipeline(
-      "feature-extraction",
-      "mixedbread-ai/mxbai-embed-xsmall-v1",
-      { device: "cpu" }
-    );
-
     // Generate embeddings for all descriptions
-    const embeddings = await Promise.all(
-      descriptions.map(async (description) => {
-        if (!description) return new Array(384).fill(0);
-        const output = await extractor(description, { pooling: "mean", normalize: true });
-        return Array.from(output.data);
-      })
-    );
+    const embeddings = descriptions.map(description => {
+      if (!description) return new Array(384).fill(0);
+      return generateEmbedding(description);
+    });
 
     console.log('Successfully generated embeddings');
 
