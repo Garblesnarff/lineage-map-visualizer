@@ -1,6 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { pipeline } from "@huggingface/transformers";
+import { pipeline } from "npm:@huggingface/transformers@2.6.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,7 +22,7 @@ serve(async (req) => {
 
     console.log(`Processing ${descriptions.length} descriptions`);
 
-    // Create feature extraction pipeline with the smaller model
+    // Create feature extraction pipeline
     const extractor = await pipeline(
       "feature-extraction",
       "mixedbread-ai/mxbai-embed-xsmall-v1",
@@ -34,7 +34,7 @@ serve(async (req) => {
       descriptions.map(async (description) => {
         if (!description) return new Array(384).fill(0);
         const output = await extractor(description, { pooling: "mean", normalize: true });
-        return output.tolist();
+        return Array.from(output.data);
       })
     );
 
