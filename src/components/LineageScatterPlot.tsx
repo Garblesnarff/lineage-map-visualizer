@@ -30,6 +30,11 @@ export const LineageScatterPlot = ({ data, onLineageSelect }: LineageScatterPlot
       .domain([d3.min(data, d => d.y) || 0, d3.max(data, d => d.y) || 0])
       .range([height - margin.bottom, margin.top]);
 
+    // Create color scale for scholastic scores
+    const colorScale = d3.scaleSequential()
+      .domain([0, 10]) // Assuming scholastic scores are between 0 and 10
+      .interpolator(d3.interpolateRdBu);
+
     // Add axes
     svg.append("g")
       .attr("transform", `translate(0,${height - margin.bottom})`)
@@ -48,7 +53,7 @@ export const LineageScatterPlot = ({ data, onLineageSelect }: LineageScatterPlot
       .attr("cx", d => xScale(d.x))
       .attr("cy", d => yScale(d.y))
       .attr("r", 6)
-      .attr("fill", "#60a5fa")
+      .attr("fill", d => colorScale(d.scholastic || 0))
       .attr("opacity", 0.7)
       .attr("cursor", "pointer")
       .on("mouseover", function() {

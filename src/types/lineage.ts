@@ -5,4 +5,5 @@ export interface LineageData {
   text: string;
   x: number;
   y: number;
+  scholastic: number;
 }
