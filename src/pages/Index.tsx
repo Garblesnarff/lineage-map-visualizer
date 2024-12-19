@@ -23,7 +23,7 @@ const Index = () => {
       if (teachersError) throw teachersError;
 
       // Generate embeddings using the Supabase Edge Function
-      const descriptions = teachersData.map(t => t.description ?? '');
+      const descriptions = teachersData.map(t => t.description || '');
       const { data: embeddingsData, error: embeddingsError } = await supabase.functions
         .invoke('generate-embeddings', {
           body: { descriptions }
@@ -36,7 +36,7 @@ const Index = () => {
         nComponents: 2,
         nNeighbors: 15,
         minDist: 0.1,
-        seed: 42  // Use seed instead of random_state
+        nEpochs: 200
       });
       const coordinates = umap.fit(embeddingsData.embeddings);
 

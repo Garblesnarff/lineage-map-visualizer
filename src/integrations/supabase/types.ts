@@ -93,6 +93,7 @@ export type Database = {
       teachers: {
         Row: {
           created_at: string | null
+          description: string | null
           id: string
           latitude: number | null
           location_name: string | null
@@ -109,6 +110,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          description?: string | null
           id?: string
           latitude?: number | null
           location_name?: string | null
@@ -125,6 +127,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          description?: string | null
           id?: string
           latitude?: number | null
           location_name?: string | null
