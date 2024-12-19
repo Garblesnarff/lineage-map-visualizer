@@ -7,6 +7,7 @@ import { TeacherData } from "@/types/teacher";
 import { RelationshipData } from "@/types/relationship";
 import { supabase } from "@/integrations/supabase/client";
 import { Pipeline } from '@xenova/transformers';
+import { UMAP } from 'umap-js';
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -16,12 +17,31 @@ const Index = () => {
   const { data: teachers = [], isLoading: isLoadingTeachers } = useQuery({
     queryKey: ["teachers"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: teachersData, error: teachersError } = await supabase
         .from("teachers")
         .select("*");
       
-      if (error) throw error;
-      return data as TeacherData[];
+      if (teachersError) throw teachersError;
+
+      // Generate embeddings using the Supabase Edge Function
+      const descriptions = teachersData.map(t => t.description || '');
+      const { data: embeddingsData, error: embeddingsError } = await supabase.functions
+        .invoke('generate-embeddings', {
+          body: { descriptions }
+        });
+
+      if (embeddingsError) throw embeddingsError;
+
+      // Use UMAP to reduce dimensionality
+      const umap = new UMAP({ random_state: 42 });
+      const coordinates = umap.fit(embeddingsData.embeddings);
+
+      // Combine teacher data with coordinates
+      return teachersData.map((teacher, index) => ({
+        ...teacher,
+        x: coordinates[index][0],
+        y: coordinates[index][1],
+      })) as TeacherData[];
     },
   });
 
@@ -64,11 +84,19 @@ const Index = () => {
         {isLoading ? (
           <div className="text-center">Loading teachers and relationships...</div>
         ) : (
-          <TeacherNetwork
-            teachers={filteredTeachers}
-            relationships={relationships}
-            onTeacherSelect={setSelectedTeacher}
-          />
+          <>
+            <TeacherNetwork
+              teachers={filteredTeachers}
+              relationships={relationships}
+              onTeacherSelect={setSelectedTeacher}
+            />
+            {selectedTeacher && (
+              <LineageCard
+                teacher={selectedTeacher}
+                onClose={() => setSelectedTeacher(null)}
+              />
+            )}
+          </>
         )}
       </div>
     </div>

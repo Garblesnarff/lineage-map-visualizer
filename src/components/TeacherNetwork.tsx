@@ -20,6 +20,8 @@ export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: Tea
       id: teacher.id,
       label: teacher.name,
       title: `${teacher.name}\n${teacher.tradition} tradition`,
+      x: teacher.x,
+      y: teacher.y,
     }));
 
     // Create edges from relationships
