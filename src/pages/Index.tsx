@@ -6,7 +6,6 @@ import { LineageCard } from "@/components/LineageCard";
 import { TeacherData } from "@/types/teacher";
 import { RelationshipData } from "@/types/relationship";
 import { supabase } from "@/integrations/supabase/client";
-import { Pipeline } from '@xenova/transformers';
 import { UMAP } from 'umap-js';
 
 const Index = () => {
@@ -24,7 +23,7 @@ const Index = () => {
       if (teachersError) throw teachersError;
 
       // Generate embeddings using the Supabase Edge Function
-      const descriptions = teachersData.map(t => t.description || '');
+      const descriptions = teachersData.map(t => t.description ?? '');
       const { data: embeddingsData, error: embeddingsError } = await supabase.functions
         .invoke('generate-embeddings', {
           body: { descriptions }
@@ -33,7 +32,12 @@ const Index = () => {
       if (embeddingsError) throw embeddingsError;
 
       // Use UMAP to reduce dimensionality
-      const umap = new UMAP({ random_state: 42 });
+      const umap = new UMAP({
+        nComponents: 2,
+        nNeighbors: 15,
+        minDist: 0.1,
+        seed: 42  // Use seed instead of random_state
+      });
       const coordinates = umap.fit(embeddingsData.embeddings);
 
       // Combine teacher data with coordinates
