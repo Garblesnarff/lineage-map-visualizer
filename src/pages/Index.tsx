@@ -42,7 +42,19 @@ const Index = () => {
         spread: 1.0,
         nEpochs: 100
       });
-      const coordinates = umap.fit(embeddingsData.embeddings);
+      
+      // Add mock coordinates if embeddings are all zeros
+      let coordinates;
+      if (embeddingsData.embeddings.every((embedding: number[]) => embedding.every(val => val === 0))) {
+        console.log("Using mock coordinates since embeddings are all zeros");
+        coordinates = teachersData.map((_, index) => [
+          Math.cos(index * Math.PI / teachersData.length),
+          Math.sin(index * Math.PI / teachersData.length)
+        ]);
+      } else {
+        coordinates = umap.fit(embeddingsData.embeddings);
+      }
+      
       console.log("UMAP coordinates generated:", coordinates);
 
       // Combine teacher data with coordinates
@@ -71,9 +83,14 @@ const Index = () => {
     },
   });
 
-  const filteredTeachers = teachers.filter(teacher =>
-    teacher.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Apply search filter only if there's a search term
+  const filteredTeachers = searchTerm
+    ? teachers.filter(teacher =>
+        teacher.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : teachers;
+
+  console.log("Filtered teachers being passed to TeacherNetwork:", filteredTeachers);
 
   const isLoading = isLoadingTeachers || isLoadingRelationships;
 
