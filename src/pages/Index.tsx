@@ -21,6 +21,8 @@ const Index = () => {
         .select("*");
       
       if (teachersError) throw teachersError;
+      
+      console.log("Teachers data fetched:", teachersData);
 
       // Generate embeddings using the Edge Function
       const descriptions = teachersData.map(t => t.description || '');
@@ -30,6 +32,7 @@ const Index = () => {
         });
 
       if (embeddingsError) throw embeddingsError;
+      console.log("Embeddings generated:", embeddingsData);
 
       // Use UMAP with specified parameters
       const umap = new UMAP({
@@ -40,13 +43,17 @@ const Index = () => {
         nEpochs: 100
       });
       const coordinates = umap.fit(embeddingsData.embeddings);
+      console.log("UMAP coordinates generated:", coordinates);
 
       // Combine teacher data with coordinates
-      return teachersData.map((teacher, index) => ({
+      const teachersWithCoordinates = teachersData.map((teacher, index) => ({
         ...teacher,
-        x: coordinates[index][0],
-        y: coordinates[index][1],
+        x: coordinates[index][0] * 100, // Scale coordinates for better visibility
+        y: coordinates[index][1] * 100,
       })) as TeacherData[];
+      
+      console.log("Final teachers data with coordinates:", teachersWithCoordinates);
+      return teachersWithCoordinates;
     },
   });
 
@@ -59,6 +66,7 @@ const Index = () => {
         .select("*");
       
       if (error) throw error;
+      console.log("Relationships data fetched:", data);
       return data as RelationshipData[];
     },
   });

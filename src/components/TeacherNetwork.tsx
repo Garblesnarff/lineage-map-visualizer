@@ -14,7 +14,15 @@ export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: Tea
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!networkRef.current || !teachers.length) return;
+    console.log("TeacherNetwork received props:", { teachers, relationships });
+    
+    if (!networkRef.current || !teachers.length) {
+      console.log("Network ref or teachers not ready:", { 
+        hasNetworkRef: !!networkRef.current, 
+        teachersLength: teachers.length 
+      });
+      return;
+    }
 
     // Create nodes from teachers
     const nodes = teachers.map(teacher => ({
@@ -32,6 +40,7 @@ export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: Tea
         },
       },
     }));
+    console.log("Created nodes:", nodes);
 
     // Create edges from relationships
     const edges = relationships.map(rel => ({
@@ -40,6 +49,7 @@ export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: Tea
       label: rel.relationship_type || '',
       arrows: 'to',
     }));
+    console.log("Created edges:", edges);
 
     // Network configuration
     const options = {
@@ -65,6 +75,7 @@ export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: Tea
         },
       },
       physics: {
+        enabled: true,
         stabilization: true,
         barnesHut: {
           gravitationalConstant: -2000,
@@ -74,10 +85,12 @@ export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: Tea
     };
 
     // Create network
+    console.log("Initializing network with:", { nodes, edges, options });
     const network = new Network(networkRef.current, { nodes, edges }, options);
 
     // Handle node selection
     network.on('selectNode', (params) => {
+      console.log("Node selected:", params);
       const selectedTeacher = teachers.find(t => t.id === params.nodes[0]);
       if (selectedTeacher) {
         setSelectedNodeId(selectedTeacher.id);
@@ -87,6 +100,7 @@ export const TeacherNetwork = ({ teachers, relationships, onTeacherSelect }: Tea
 
     // Handle deselection
     network.on('deselectNode', () => {
+      console.log("Node deselected");
       setSelectedNodeId(null);
     });
 
