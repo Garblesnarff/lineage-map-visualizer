@@ -16,56 +16,32 @@ const Index = () => {
   const { data: teachers = [], isLoading: isLoadingTeachers } = useQuery({
     queryKey: ["teachers"],
     queryFn: async () => {
+      console.log("Starting teacher data fetch...");
+      
       const { data: teachersData, error: teachersError } = await supabase
         .from("teachers")
         .select("*");
       
-      if (teachersError) throw teachersError;
+      if (teachersError) {
+        console.error("Error fetching teachers:", teachersError);
+        throw teachersError;
+      }
       
       console.log("Teachers data fetched:", teachersData);
 
-      // Generate embeddings using the Edge Function
-      const descriptions = teachersData.map(t => t.description || '');
-      const { data: embeddingsData, error: embeddingsError } = await supabase.functions
-        .invoke('generate-embeddings', {
-          body: { descriptions }
-        });
-
-      if (embeddingsError) throw embeddingsError;
-      console.log("Embeddings generated:", embeddingsData);
-
-      // Use UMAP with specified parameters
-      const umap = new UMAP({
-        nComponents: 2,
-        nNeighbors: 15,
-        minDist: 0.1,
-        spread: 1.0,
-        nEpochs: 100
+      // Generate circular layout coordinates
+      const teachersWithCoordinates = teachersData.map((teacher, index) => {
+        const angle = (index * 2 * Math.PI) / teachersData.length;
+        const radius = 300; // Adjust this value to change the circle size
+        return {
+          ...teacher,
+          x: radius * Math.cos(angle),
+          y: radius * Math.sin(angle),
+        };
       });
       
-      // Add mock coordinates if embeddings are all zeros
-      let coordinates;
-      if (embeddingsData.embeddings.every((embedding: number[]) => embedding.every(val => val === 0))) {
-        console.log("Using mock coordinates since embeddings are all zeros");
-        coordinates = teachersData.map((_, index) => [
-          Math.cos(index * Math.PI / teachersData.length),
-          Math.sin(index * Math.PI / teachersData.length)
-        ]);
-      } else {
-        coordinates = umap.fit(embeddingsData.embeddings);
-      }
-      
-      console.log("UMAP coordinates generated:", coordinates);
-
-      // Combine teacher data with coordinates
-      const teachersWithCoordinates = teachersData.map((teacher, index) => ({
-        ...teacher,
-        x: coordinates[index][0] * 100, // Scale coordinates for better visibility
-        y: coordinates[index][1] * 100,
-      })) as TeacherData[];
-      
       console.log("Final teachers data with coordinates:", teachersWithCoordinates);
-      return teachersWithCoordinates;
+      return teachersWithCoordinates as TeacherData[];
     },
   });
 
@@ -73,17 +49,23 @@ const Index = () => {
   const { data: relationships = [], isLoading: isLoadingRelationships } = useQuery({
     queryKey: ["relationships"],
     queryFn: async () => {
+      console.log("Starting relationships fetch...");
+      
       const { data, error } = await supabase
         .from("relationships")
         .select("*");
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching relationships:", error);
+        throw error;
+      }
+      
       console.log("Relationships data fetched:", data);
       return data as RelationshipData[];
     },
   });
 
-  // Apply search filter only if there's a search term
+  // Apply search filter
   const filteredTeachers = searchTerm
     ? teachers.filter(teacher =>
         teacher.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -91,6 +73,7 @@ const Index = () => {
     : teachers;
 
   console.log("Filtered teachers being passed to TeacherNetwork:", filteredTeachers);
+  console.log("Relationships being passed to TeacherNetwork:", relationships);
 
   const isLoading = isLoadingTeachers || isLoadingRelationships;
 
